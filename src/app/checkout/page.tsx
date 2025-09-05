@@ -12,6 +12,12 @@ import {
   MpesaSTKPushResponse,
 } from "@/types";
 import { CreditCard, User, Smartphone, CheckCircle } from "lucide-react";
+import {
+  calculateDiscountedPrice,
+  hasDiscount,
+  formatDiscountPercentage,
+  calculateTotalSavings,
+} from "@/lib/discount-utils";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -525,19 +531,74 @@ export default function CheckoutPage() {
                   <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                 </div>
                 <div className="text-sm font-medium text-gray-900">
-                  KES {(item.product.price * item.quantity).toFixed(2)}
+                  {hasDiscount(item.product) ? (
+                    <div className="text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        <span className="line-through text-gray-500">
+                          KES{" "}
+                          {(
+                            calculateDiscountedPrice(item.product)
+                              .originalPrice * item.quantity
+                          ).toFixed(2)}
+                        </span>
+                        <span className="text-green-600">
+                          KES{" "}
+                          {(
+                            calculateDiscountedPrice(item.product)
+                              .discountedPrice * item.quantity
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-red-600 mt-1">
+                        {formatDiscountPercentage(
+                          calculateDiscountedPrice(item.product)
+                            .discountPercentage
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <span>
+                      KES {(item.product.price * item.quantity).toFixed(2)}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
           </div>
 
           <div className="mt-6 border-t border-gray-200 pt-6">
-            <div className="flex justify-between text-lg font-semibold">
-              <span>Total</span>
-              <span className="text-green-600">
-                KES {cart.total.toFixed(2)}
-              </span>
-            </div>
+            {(() => {
+              const totalSavings = calculateTotalSavings(cart.items);
+              const originalTotal = cart.items.reduce(
+                (sum, item) => sum + item.product.price * item.quantity,
+                0
+              );
+
+              return (
+                <>
+                  {totalSavings > 0 && (
+                    <div className="flex justify-between text-sm text-gray-600 mb-2">
+                      <span>Original Total:</span>
+                      <span className="line-through">
+                        KES {originalTotal.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {totalSavings > 0 && (
+                    <div className="flex justify-between text-sm text-green-600 mb-2">
+                      <span>You Save:</span>
+                      <span>KES {totalSavings.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-lg font-semibold">
+                    <span>Total</span>
+                    <span className="text-green-600">
+                      KES {cart.total.toFixed(2)}
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>

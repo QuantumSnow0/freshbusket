@@ -31,6 +31,8 @@ export function ProductForm({
     price: product?.price || 0,
     category: product?.category || "",
     stock_quantity: product?.stock_quantity || 0,
+    discount_type: product?.discount_type || "",
+    discount_value: product?.discount_value || 0,
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -48,7 +50,11 @@ export function ProductForm({
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "price" || name === "stock_quantity" ? Number(value) : value,
+        name === "price" ||
+        name === "stock_quantity" ||
+        name === "discount_value"
+          ? Number(value)
+          : value,
     }));
   };
 
@@ -118,6 +124,10 @@ export function ProductForm({
     onSubmit({
       ...formData,
       image_url: imageUrl,
+      discount_type: formData.discount_type as
+        | "percentage"
+        | "fixed"
+        | undefined,
     });
   };
 
@@ -223,6 +233,88 @@ export function ProductForm({
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black"
           />
         </div>
+      </div>
+
+      {/* Discount Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-gray-900">Discount Settings</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label
+              htmlFor="discount_type"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Discount Type
+            </label>
+            <select
+              id="discount_type"
+              name="discount_type"
+              value={formData.discount_type}
+              onChange={handleInputChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black"
+            >
+              <option value="">No Discount</option>
+              <option value="percentage">Percentage (%)</option>
+              <option value="fixed">Fixed Amount (KES)</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="discount_value"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Discount Value
+            </label>
+            <input
+              type="number"
+              id="discount_value"
+              name="discount_value"
+              min="0"
+              step={formData.discount_type === "percentage" ? "1" : "0.01"}
+              max={formData.discount_type === "percentage" ? "100" : undefined}
+              value={formData.discount_value}
+              onChange={handleInputChange}
+              disabled={!formData.discount_type}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black disabled:bg-gray-100 disabled:cursor-not-allowed"
+              placeholder={
+                formData.discount_type === "percentage"
+                  ? "Enter percentage (0-100)"
+                  : "Enter amount in KES"
+              }
+            />
+          </div>
+        </div>
+
+        {/* Discount Preview */}
+        {formData.discount_type && formData.discount_value > 0 && (
+          <div className="bg-green-50 border border-green-200 rounded-md p-4">
+            <h4 className="text-sm font-medium text-green-800 mb-2">
+              Discount Preview
+            </h4>
+            <div className="text-sm text-green-700">
+              <div className="flex items-center space-x-2">
+                <span className="line-through text-gray-500">
+                  KES {formData.price.toFixed(2)}
+                </span>
+                <span className="font-semibold text-green-600">
+                  KES{" "}
+                  {(formData.discount_type === "percentage"
+                    ? formData.price -
+                      (formData.price * formData.discount_value) / 100
+                    : Math.max(0, formData.price - formData.discount_value)
+                  ).toFixed(2)}
+                </span>
+                <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
+                  {formData.discount_type === "percentage"
+                    ? `${formData.discount_value}% OFF`
+                    : `KES ${formData.discount_value} OFF`}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div>

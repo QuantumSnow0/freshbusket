@@ -7,6 +7,8 @@ export interface Product {
   image_url: string;
   category: string;
   stock_quantity: number;
+  discount_type?: "percentage" | "fixed";
+  discount_value?: number; // percentage (0-100) or fixed amount
   created_at?: string;
   updated_at?: string;
 }
@@ -57,6 +59,10 @@ export interface OrderItem {
   product_price: number;
   quantity: number;
   image_url: string;
+  discount_type?: "percentage" | "fixed";
+  discount_value?: number;
+  original_price?: number; // Price before discount
+  discounted_price?: number; // Price after discount
 }
 
 export interface Order {

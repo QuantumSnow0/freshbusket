@@ -6,6 +6,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import Image from "next/image";
+import {
+  calculateDiscountedPrice,
+  hasDiscount,
+  formatDiscountPercentage,
+  calculateTotalSavings,
+} from "@/lib/discount-utils";
 
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
@@ -76,9 +82,34 @@ export default function CartPage() {
                   <p className="text-sm text-gray-500">
                     {item.product.category}
                   </p>
-                  <p className="text-lg font-semibold text-green-600">
-                    KES {item.product.price.toFixed(2)}
-                  </p>
+                  <div className="text-lg font-semibold">
+                    {hasDiscount(item.product) ? (
+                      <div className="flex items-center space-x-2">
+                        <span className="line-through text-gray-500">
+                          KES{" "}
+                          {calculateDiscountedPrice(
+                            item.product
+                          ).originalPrice.toFixed(2)}
+                        </span>
+                        <span className="text-green-600">
+                          KES{" "}
+                          {calculateDiscountedPrice(
+                            item.product
+                          ).discountedPrice.toFixed(2)}
+                        </span>
+                        <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
+                          {formatDiscountPercentage(
+                            calculateDiscountedPrice(item.product)
+                              .discountPercentage
+                          )}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-green-600">
+                        KES {item.product.price.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -107,7 +138,11 @@ export default function CartPage() {
 
                 <div className="text-right">
                   <p className="text-lg font-semibold text-gray-900">
-                    KES {(item.product.price * item.quantity).toFixed(2)}
+                    KES{" "}
+                    {(
+                      calculateDiscountedPrice(item.product).discountedPrice *
+                      item.quantity
+                    ).toFixed(2)}
                   </p>
                   <button
                     onClick={() => removeFromCart(item.product.id)}
@@ -121,12 +156,38 @@ export default function CartPage() {
           </div>
 
           <div className="mt-8 border-t border-gray-200 pt-6">
-            <div className="flex justify-between items-center text-lg font-semibold">
-              <span>Total ({cart.itemCount} items)</span>
-              <span className="text-green-600">
-                KES {cart.total.toFixed(2)}
-              </span>
-            </div>
+            {(() => {
+              const totalSavings = calculateTotalSavings(cart.items);
+              const originalTotal = cart.items.reduce(
+                (sum, item) => sum + item.product.price * item.quantity,
+                0
+              );
+
+              return (
+                <>
+                  {totalSavings > 0 && (
+                    <div className="flex justify-between items-center text-sm text-gray-600 mb-2">
+                      <span>Original Total:</span>
+                      <span className="line-through">
+                        KES {originalTotal.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {totalSavings > 0 && (
+                    <div className="flex justify-between items-center text-sm text-green-600 mb-2">
+                      <span>You Save:</span>
+                      <span>KES {totalSavings.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center text-lg font-semibold">
+                    <span>Total ({cart.itemCount} items)</span>
+                    <span className="text-green-600">
+                      KES {cart.total.toFixed(2)}
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
 
             <div className="mt-6 flex space-x-4">
               <Link

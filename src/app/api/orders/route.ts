@@ -84,6 +84,62 @@ export async function POST(request: NextRequest) {
     const orderData: Omit<Order, "id" | "created_at" | "updated_at"> =
       await request.json();
 
+    // Process order items to include discount information
+    const processedItems = await Promise.all(
+      orderData.items.map(async (item: any) => {
+        // Get product details including discount information
+        const { data: productData, error: productError } = await supabase
+          .from("products")
+          .select("discount_type, discount_value, price")
+          .eq("id", item.product_id)
+          .single();
+
+        if (productError) {
+          console.error(
+            `Failed to fetch product ${item.product_id}:`,
+            productError
+          );
+          return item; // Return original item if product fetch fails
+        }
+
+        // Calculate discount information
+        const originalPrice = productData.price;
+        let discountedPrice = originalPrice;
+        let discountAmount = 0;
+
+        if (productData.discount_type && productData.discount_value > 0) {
+          if (productData.discount_type === "percentage") {
+            discountAmount = (originalPrice * productData.discount_value) / 100;
+          } else if (productData.discount_type === "fixed") {
+            discountAmount = Math.min(
+              originalPrice,
+              productData.discount_value
+            );
+          }
+          discountedPrice = Math.max(0, originalPrice - discountAmount);
+        }
+
+        return {
+          ...item,
+          discount_type: productData.discount_type,
+          discount_value: productData.discount_value,
+          original_price: originalPrice,
+          discounted_price: discountedPrice,
+          product_price: discountedPrice, // Use discounted price for order total
+        };
+      })
+    );
+
+    // Update order data with processed items
+    const processedOrderData = {
+      ...orderData,
+      items: processedItems,
+      total_price: processedItems.reduce(
+        (sum, item) => sum + item.discounted_price * item.quantity,
+        0
+      ),
+    };
+
     // Validate stock availability before creating order
     try {
       const adminSupabase = createAdminClient();
@@ -128,7 +184,7 @@ export async function POST(request: NextRequest) {
       .from("orders")
       .insert([
         {
-          ...orderData,
+          ...processedOrderData,
           user_id: user.id,
           order_status: "pending", // Set default order status
         },

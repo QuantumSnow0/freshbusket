@@ -4,6 +4,11 @@ import { Product } from "@/types";
 import { useCart } from "@/contexts/CartContext";
 import { Plus, Minus } from "lucide-react";
 import Image from "next/image";
+import {
+  calculateDiscountedPrice,
+  hasDiscount,
+  formatDiscountPercentage,
+} from "@/lib/discount-utils";
 
 interface ProductCardProps {
   product: Product;
@@ -14,6 +19,10 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const cartItem = cart.items.find((item) => item.product.id === product.id);
   const quantity = cartItem?.quantity || 0;
+
+  // Calculate discount information
+  const discountInfo = calculateDiscountedPrice(product);
+  const showDiscount = hasDiscount(product);
 
   const handleAddToCart = () => {
     addToCart(product, 1);
@@ -61,9 +70,25 @@ export function ProductCard({ product }: ProductCardProps) {
         </p>
 
         <div className="flex items-center justify-between mb-3">
-          <span className="text-2xl font-bold text-green-600">
-            KES {product.price.toFixed(2)}
-          </span>
+          <div className="flex flex-col">
+            {showDiscount ? (
+              <div className="flex items-center space-x-2">
+                <span className="text-lg line-through text-gray-500">
+                  KES {discountInfo.originalPrice.toFixed(2)}
+                </span>
+                <span className="text-2xl font-bold text-green-600">
+                  KES {discountInfo.discountedPrice.toFixed(2)}
+                </span>
+                <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
+                  {formatDiscountPercentage(discountInfo.discountPercentage)}
+                </span>
+              </div>
+            ) : (
+              <span className="text-2xl font-bold text-green-600">
+                KES {product.price.toFixed(2)}
+              </span>
+            )}
+          </div>
           <span className="text-sm text-gray-500">
             {product.stock_quantity} in stock
           </span>
