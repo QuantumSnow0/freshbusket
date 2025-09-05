@@ -33,7 +33,7 @@ export function Navbar() {
               Home
             </Link>
             <Link
-              href="/products"
+              href="/"
               className="text-gray-700 hover:text-green-600 transition-colors"
             >
               Products
@@ -110,7 +110,7 @@ export function Navbar() {
                 Home
               </Link>
               <Link
-                href="/products"
+                href="/"
                 className="block px-3 py-2 text-gray-700 hover:text-green-600 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
