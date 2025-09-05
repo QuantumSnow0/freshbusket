@@ -7,7 +7,7 @@ import { useCart } from "@/contexts/CartContext";
 import { ProfileDropdown } from "./ProfileDropdown";
 import { ShoppingCart, Menu, X } from "lucide-react";
 
-export function Navbar() {
+export default function Navbar() {
   const { user, signOut } = useAuth();
   const { cart } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

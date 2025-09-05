@@ -1,130 +1,174 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { Product } from "@/types";
 import { useCart } from "@/contexts/CartContext";
-import { Plus, Minus } from "lucide-react";
-import Image from "next/image";
-import {
-  calculateDiscountedPrice,
-  hasDiscount,
-  formatDiscountPercentage,
-} from "@/lib/discount-utils";
+import { ShoppingCart, Plus, Minus, Star } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
-  const { addToCart, updateQuantity, cart } = useCart();
+export default function ProductCard({ product }: ProductCardProps) {
+  const { addToCart, removeFromCart, getItemQuantity } = useCart();
+  const [quantity, setQuantity] = useState(1);
 
-  const cartItem = cart.items.find((item) => item.product.id === product.id);
-  const quantity = cartItem?.quantity || 0;
+  const hasDiscount =
+    product.discount_type &&
+    product.discount_value &&
+    product.discount_value > 0;
+  const discountedPrice = hasDiscount
+    ? product.discount_type === "percentage"
+      ? product.price * (1 - product.discount_value / 100)
+      : product.price - product.discount_value
+    : product.price;
 
-  // Calculate discount information
-  const discountInfo = calculateDiscountedPrice(product);
-  const showDiscount = hasDiscount(product);
+  const itemQuantity = getItemQuantity(product.id);
+  const isInCart = itemQuantity > 0;
 
   const handleAddToCart = () => {
-    addToCart(product, 1);
+    addToCart(product, quantity);
+    setQuantity(1);
   };
 
   const handleIncrement = () => {
-    if (quantity === 0) {
-      addToCart(product, 1);
-    } else {
-      updateQuantity(product.id, quantity + 1);
+    if (quantity < product.stock_quantity) {
+      setQuantity(quantity + 1);
     }
   };
 
   const handleDecrement = () => {
     if (quantity > 1) {
-      updateQuantity(product.id, quantity - 1);
-    } else {
-      updateQuantity(product.id, 0);
+      setQuantity(quantity - 1);
     }
   };
 
+  const handleCartIncrement = () => {
+    addToCart(product, 1);
+  };
+
+  const handleCartDecrement = () => {
+    removeFromCart(product.id);
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="relative h-48 w-full">
-        <Image
-          src={product.image_url}
-          alt={product.name}
-          fill
-          className="object-cover"
-        />
-        {product.stock_quantity === 0 && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <span className="text-white font-semibold">Out of Stock</span>
-          </div>
-        )}
-      </div>
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group">
+      <Link href={`/products/${product.id}`}>
+        <div className="aspect-square relative overflow-hidden">
+          <Image
+            src={product.image_url}
+            alt={product.name}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+          {hasDiscount && (
+            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+              {product.discount_type === "percentage"
+                ? `${product.discount_value}% OFF`
+                : `KES ${product.discount_value} OFF`}
+            </div>
+          )}
+        </div>
+      </Link>
 
       <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-          {product.name}
-        </h3>
+        <Link href={`/products/${product.id}`}>
+          <h3 className="text-lg font-semibold text-gray-900 hover:text-green-600 transition-colors line-clamp-2">
+            {product.name}
+          </h3>
+        </Link>
 
-        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-          {product.description}
-        </p>
+        <div className="mt-2 flex items-center space-x-1">
+          {[...Array(5)].map((_, i) => (
+            <Star
+              key={i}
+              className={`w-4 h-4 ${
+                i < 4 ? "text-yellow-400" : "text-gray-300"
+              }`}
+              fill="currentColor"
+            />
+          ))}
+          <span className="text-sm text-gray-600 ml-1">(4.0)</span>
+        </div>
 
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex flex-col">
-            {showDiscount ? (
-              <div className="flex items-center space-x-2">
-                <span className="text-lg line-through text-gray-500">
-                  KES {discountInfo.originalPrice.toFixed(2)}
-                </span>
-                <span className="text-2xl font-bold text-green-600">
-                  KES {discountInfo.discountedPrice.toFixed(2)}
-                </span>
-                <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
-                  {formatDiscountPercentage(discountInfo.discountPercentage)}
-                </span>
-              </div>
-            ) : (
-              <span className="text-2xl font-bold text-green-600">
-                KES {product.price.toFixed(2)}
+        <div className="mt-3 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {hasDiscount && (
+              <span className="text-sm text-gray-500 line-through">
+                KES {product.price.toLocaleString()}
               </span>
             )}
+            <span className="text-xl font-bold text-green-600">
+              KES {discountedPrice.toLocaleString()}
+            </span>
           </div>
           <span className="text-sm text-gray-500">
-            {product.stock_quantity} in stock
+            {product.stock_quantity} left
           </span>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-            {product.category}
-          </span>
-
-          {quantity === 0 ? (
-            <button
-              onClick={handleAddToCart}
-              disabled={product.stock_quantity === 0}
-              className="flex items-center space-x-1 bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add to Cart</span>
-            </button>
-          ) : (
-            <div className="flex items-center space-x-2">
+        <div className="mt-4">
+          {isInCart ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center border border-gray-300 rounded-md">
+                <button
+                  onClick={handleCartDecrement}
+                  className="p-2 hover:bg-gray-100"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <span className="px-3 py-2 border-x border-gray-300 min-w-[40px] text-center">
+                  {itemQuantity}
+                </span>
+                <button
+                  onClick={handleCartIncrement}
+                  disabled={itemQuantity >= product.stock_quantity}
+                  className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
               <button
-                onClick={handleDecrement}
-                className="flex items-center justify-center w-8 h-8 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                onClick={() => removeFromCart(product.id)}
+                className="text-red-600 hover:text-red-700 text-sm font-medium"
               >
-                <Minus className="w-4 h-4" />
+                Remove
               </button>
-              <span className="text-sm font-medium text-gray-900 min-w-[20px] text-center">
-                {quantity}
-              </span>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Quantity:</span>
+                <div className="flex items-center border border-gray-300 rounded-md">
+                  <button
+                    onClick={handleDecrement}
+                    disabled={quantity <= 1}
+                    className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="px-3 py-2 border-x border-gray-300 min-w-[40px] text-center">
+                    {quantity}
+                  </span>
+                  <button
+                    onClick={handleIncrement}
+                    disabled={quantity >= product.stock_quantity}
+                    className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
               <button
-                onClick={handleIncrement}
-                disabled={quantity >= product.stock_quantity}
-                className="flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                onClick={handleAddToCart}
+                disabled={product.stock_quantity === 0}
+                className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
               >
-                <Plus className="w-4 h-4" />
+                <ShoppingCart className="w-4 h-4" />
+                <span>Add to Cart</span>
               </button>
             </div>
           )}
