@@ -13,8 +13,11 @@ const BUSINESS_SHORTCODE = process.env.MPESA_SHORTCODE || "174379";
 // For sandbox testing, use a public callback URL or ngrok
 const CALLBACK_URL =
   process.env.MPESA_ENV === "production"
-    ? `${process.env.NEXT_PUBLIC_APP_URL}/api/mpesa/callback`
-    : process.env.MPESA_CALLBACK_URL || "https://webhook.site/your-unique-url"; // Replace with your webhook.site URL
+    ? `${
+        process.env.NEXT_PUBLIC_SITE_URL || "https://freshbusket.vercel.app"
+      }/api/mpesa/callback`
+    : process.env.MPESA_CALLBACK_URL ||
+      "https://freshbusket.vercel.app/api/mpesa/callback";
 
 // Debug: Log the callback URL being used
 console.log("Using callback URL:", CALLBACK_URL);

@@ -86,6 +86,58 @@ export async function PUT(
       }
       updateResult = statusData;
       console.log("Order status updated successfully:", statusData);
+
+      // Handle stock restoration for cancelled orders
+      if (
+        updateData.order_status === "cancelled" &&
+        currentOrder?.order_status !== "cancelled"
+      ) {
+        try {
+          console.log("Order cancelled, restoring stock quantities...");
+
+          for (const item of currentOrder.items) {
+            // Get current stock quantity
+            const { data: productData, error: fetchError } = await supabase
+              .from("products")
+              .select("stock_quantity, name")
+              .eq("id", item.product_id)
+              .single();
+
+            if (fetchError) {
+              console.error(
+                `Failed to fetch product ${item.product_id}:`,
+                fetchError
+              );
+              continue;
+            }
+
+            const currentStock = productData.stock_quantity || 0;
+            const restoredStock = currentStock + item.quantity;
+
+            // Restore the stock quantity
+            const { error: stockError } = await supabase
+              .from("products")
+              .update({
+                stock_quantity: restoredStock,
+              })
+              .eq("id", item.product_id);
+
+            if (stockError) {
+              console.error(
+                `Failed to restore stock for product ${item.product_id}:`,
+                stockError
+              );
+            } else {
+              console.log(
+                `✅ Restored stock for ${productData.name}: ${currentStock} → ${restoredStock} (+${item.quantity})`
+              );
+            }
+          }
+        } catch (stockError) {
+          console.error("Error restoring stock quantities:", stockError);
+          // Don't fail the order update if stock restoration fails
+        }
+      }
     }
 
     // Update other fields if any

@@ -307,7 +307,7 @@ export class RealEmailService {
 
         <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
           <a href="${
-            process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001"
+            process.env.NEXT_PUBLIC_SITE_URL || "https://freshbusket.vercel.app"
           }/admin/orders" 
              style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
             View Order in Admin Dashboard
@@ -353,7 +353,7 @@ export class RealEmailService {
       Please log into your admin dashboard to process this order and update its status.
       
       Admin Dashboard: ${
-        process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001"
+        process.env.NEXT_PUBLIC_SITE_URL || "https://freshbusket.vercel.app"
       }/admin/orders
       
       FreshBasket Admin Panel

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { UserProfile, Address } from "@/types";
+import { useAuth } from "./AuthContext";
 
 interface UserProfileContextType {
   profile: UserProfile | null;
@@ -29,20 +30,17 @@ export function UserProfileProvider({
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFetching, setIsFetching] = useState(false);
+  const { user: authUser, loading: authLoading } = useAuth();
   const supabase = createClient();
 
   const fetchProfile = async () => {
+    if (isFetching || !authUser) return; // Prevent multiple simultaneous fetches
+
     try {
+      setIsFetching(true);
       setLoading(true);
       setError(null);
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setProfile(null);
-        return;
-      }
 
       // Fetch user profile with addresses
       const { data: profileData, error: profileError } = await supabase
@@ -53,7 +51,7 @@ export function UserProfileProvider({
           addresses:user_addresses(*)
         `
         )
-        .eq("id", user.id)
+        .eq("id", authUser.id)
         .single();
 
       if (profileError) {
@@ -90,6 +88,7 @@ export function UserProfileProvider({
       setError("Failed to fetch profile");
     } finally {
       setLoading(false);
+      setIsFetching(false);
     }
   };
 
@@ -202,7 +201,22 @@ export function UserProfileProvider({
   };
 
   useEffect(() => {
+    // Wait for auth to finish loading
+    if (authLoading) return;
+
+    // If no user, clear profile
+    if (!authUser) {
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch profile for authenticated user
     fetchProfile();
+  }, [authUser, authLoading]);
+
+  useEffect(() => {
+    if (!profile?.user_id) return;
 
     // Set up real-time subscription for profile changes
     const channel = supabase
@@ -213,7 +227,7 @@ export function UserProfileProvider({
           event: "*",
           schema: "public",
           table: "users",
-          filter: `id=eq.${profile?.user_id || ""}`,
+          filter: `id=eq.${profile.user_id}`,
         },
         (payload) => {
           console.log("🔄 Profile update detected:", payload);
@@ -228,7 +242,7 @@ export function UserProfileProvider({
           event: "*",
           schema: "public",
           table: "user_addresses",
-          filter: `user_id=eq.${profile?.user_id || ""}`,
+          filter: `user_id=eq.${profile.user_id}`,
         },
         (payload) => {
           console.log("🔄 Address update detected:", payload);
@@ -246,7 +260,7 @@ export function UserProfileProvider({
     <UserProfileContext.Provider
       value={{
         profile,
-        loading,
+        loading: loading || authLoading,
         error,
         updateProfile,
         updateAddress,
@@ -266,4 +280,3 @@ export function useUserProfile() {
   }
   return context;
 }
-

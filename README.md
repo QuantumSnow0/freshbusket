@@ -57,7 +57,7 @@ A modern e-commerce platform built with Next.js 15, Supabase, and Stripe, design
    ```
 
 5. **Open your browser**
-   Navigate to `http://localhost:3000`
+   Navigate to `http://localhost:3000` (development) or visit [https://freshbusket.vercel.app](https://freshbusket.vercel.app) (production)
 
 ## 🔧 Environment Variables
 
@@ -88,7 +88,7 @@ MPESA_PASSKEY=your_mpesa_passkey
 MPESA_CALLBACK_URL=your_callback_url
 
 # Site Configuration
-NEXT_PUBLIC_SITE_URL=https://your-domain.vercel.app
+NEXT_PUBLIC_SITE_URL=https://freshbusket.vercel.app
 ```
 
 ## 📦 Database Setup

@@ -84,6 +84,46 @@ export async function POST(request: NextRequest) {
     const orderData: Omit<Order, "id" | "created_at" | "updated_at"> =
       await request.json();
 
+    // Validate stock availability before creating order
+    try {
+      const adminSupabase = createAdminClient();
+
+      for (const item of orderData.items) {
+        const { data: productData, error: fetchError } = await adminSupabase
+          .from("products")
+          .select("stock_quantity, name")
+          .eq("id", item.product_id)
+          .single();
+
+        if (fetchError) {
+          console.error(
+            `Failed to fetch product ${item.product_id}:`,
+            fetchError
+          );
+          return NextResponse.json(
+            { error: `Product not found: ${item.product_id}` },
+            { status: 400 }
+          );
+        }
+
+        const availableStock = productData.stock_quantity || 0;
+        if (availableStock < item.quantity) {
+          return NextResponse.json(
+            {
+              error: `Insufficient stock for ${productData.name}. Available: ${availableStock}, Requested: ${item.quantity}`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+    } catch (validationError) {
+      console.error("Stock validation error:", validationError);
+      return NextResponse.json(
+        { error: "Failed to validate stock availability" },
+        { status: 500 }
+      );
+    }
+
     const { data, error } = await supabase
       .from("orders")
       .insert([
@@ -102,6 +142,54 @@ export async function POST(request: NextRequest) {
         { error: `Failed to create order: ${error.message}` },
         { status: 500 }
       );
+    }
+
+    // Update stock quantities for ordered items
+    try {
+      const adminSupabase = createAdminClient();
+
+      for (const item of data.items) {
+        // First, get the current stock quantity
+        const { data: productData, error: fetchError } = await adminSupabase
+          .from("products")
+          .select("stock_quantity")
+          .eq("id", item.product_id)
+          .single();
+
+        if (fetchError) {
+          console.error(
+            `Failed to fetch stock for product ${item.product_id}:`,
+            fetchError
+          );
+          continue;
+        }
+
+        const currentStock = productData.stock_quantity || 0;
+        const newStock = Math.max(0, currentStock - item.quantity); // Ensure stock doesn't go below 0
+
+        // Update the stock quantity
+        const { error: stockError } = await adminSupabase
+          .from("products")
+          .update({
+            stock_quantity: newStock,
+          })
+          .eq("id", item.product_id);
+
+        if (stockError) {
+          console.error(
+            `Failed to update stock for product ${item.product_id}:`,
+            stockError
+          );
+          // Continue with other products even if one fails
+        } else {
+          console.log(
+            `✅ Updated stock for product ${item.product_id}: ${currentStock} → ${newStock} (-${item.quantity})`
+          );
+        }
+      }
+    } catch (stockError) {
+      console.error("Error updating stock quantities:", stockError);
+      // Don't fail the order creation if stock update fails
     }
 
     // Send confirmation email to customer

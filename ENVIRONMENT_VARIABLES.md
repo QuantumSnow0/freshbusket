@@ -58,7 +58,7 @@ EMAIL_APP_PASSWORD=your_16_character_app_password
 ### Site Configuration
 
 ```env
-NEXT_PUBLIC_SITE_URL=https://your-domain.vercel.app
+NEXT_PUBLIC_SITE_URL=https://freshbusket.vercel.app
 ```
 
 **Purpose:** Used for email links and redirects
@@ -72,7 +72,7 @@ MPESA_CONSUMER_KEY=your_mpesa_consumer_key
 MPESA_CONSUMER_SECRET=your_mpesa_consumer_secret
 MPESA_SHORTCODE=your_mpesa_shortcode
 MPESA_PASSKEY=your_mpesa_passkey
-MPESA_CALLBACK_URL=https://your-domain.vercel.app/api/mpesa/callback
+MPESA_CALLBACK_URL=https://freshbusket.vercel.app/api/mpesa/callback
 ```
 
 **How to get:**
@@ -130,7 +130,7 @@ NEXT_PUBLIC_ADMIN_EMAIL=admin@yourdomain.com
 EMAIL_USER=noreply@yourdomain.com
 EMAIL_APP_PASSWORD=your_app_password
 
-NEXT_PUBLIC_SITE_URL=https://your-domain.vercel.app
+NEXT_PUBLIC_SITE_URL=https://freshbusket.vercel.app
 ```
 
 ## 🔒 Security Best Practices

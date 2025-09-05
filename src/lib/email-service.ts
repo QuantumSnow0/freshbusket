@@ -265,7 +265,7 @@ export class EmailService {
         
         <p><strong>Action Required:</strong> Please log into your admin dashboard to process this order.</p>
         <p>Admin Dashboard: ${
-          process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001"
+          process.env.NEXT_PUBLIC_SITE_URL || "https://freshbusket.vercel.app"
         }/admin/orders</p>
       </div>
     `;
@@ -297,7 +297,7 @@ export class EmailService {
       
       Action Required: Please log into your admin dashboard to process this order.
       Admin Dashboard: ${
-        process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001"
+        process.env.NEXT_PUBLIC_SITE_URL || "https://freshbusket.vercel.app"
       }/admin/orders
     `;
 
