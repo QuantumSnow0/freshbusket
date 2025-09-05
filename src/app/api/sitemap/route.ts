@@ -51,7 +51,7 @@ export async function GET() {
 
     // Product pages
     const productPages =
-      products?.map((product) => ({
+      products?.map((product: any) => ({
         url: `${baseUrl}/products/${product.id}`,
         lastModified: new Date(product.updated_at),
         changeFrequency: "weekly",
@@ -60,7 +60,7 @@ export async function GET() {
 
     // Category pages
     const categoryPages =
-      categories?.map((category) => ({
+      categories?.map((category: any) => ({
         url: `${baseUrl}/products?category=${category.name}`,
         lastModified: new Date(category.updated_at),
         changeFrequency: "weekly",

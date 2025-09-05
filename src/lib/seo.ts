@@ -56,7 +56,17 @@ export function generateSEO({
         },
         offers: {
           "@type": "Offer",
-          price: product.discounted_price || product.price,
+          price: (() => {
+            const hasDiscount =
+              product.discount_type &&
+              product.discount_value &&
+              product.discount_value > 0;
+            return hasDiscount
+              ? product.discount_type === "percentage"
+                ? product.price * (1 - (product.discount_value || 0) / 100)
+                : product.price - (product.discount_value || 0)
+              : product.price;
+          })(),
           priceCurrency: "KES",
           availability:
             product.stock_quantity > 0
@@ -118,7 +128,7 @@ export function generateSEO({
         index: !noIndex,
         follow: !noIndex,
         "max-video-preview": -1,
-        "max-image-preview": "large",
+        "max-image-preview": "large" as const,
         "max-snippet": -1,
       },
     },

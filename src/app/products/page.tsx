@@ -9,18 +9,19 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 export const metadata: Metadata = generateProductsPageSEO();
 
 interface ProductsPageProps {
-  searchParams: {
+  searchParams: Promise<{
     category?: string;
     search?: string;
     sort?: string;
     page?: string;
-  };
+  }>;
 }
 
 export default async function ProductsPage({
   searchParams,
 }: ProductsPageProps) {
   const supabase = createClient();
+  const params = await searchParams;
 
   // Build query based on search params
   let query = supabase
@@ -29,19 +30,19 @@ export default async function ProductsPage({
     .order("created_at", { ascending: false });
 
   // Apply filters
-  if (searchParams.category) {
-    query = query.eq("category", searchParams.category);
+  if (params.category) {
+    query = query.eq("category", params.category);
   }
 
-  if (searchParams.search) {
+  if (params.search) {
     query = query.or(
-      `name.ilike.%${searchParams.search}%,description.ilike.%${searchParams.search}%`
+      `name.ilike.%${params.search}%,description.ilike.%${params.search}%`
     );
   }
 
   // Apply sorting
-  if (searchParams.sort) {
-    switch (searchParams.sort) {
+  if (params.sort) {
+    switch (params.sort) {
       case "price-low":
         query = query.order("price", { ascending: true });
         break;
@@ -60,7 +61,7 @@ export default async function ProductsPage({
   }
 
   // Apply pagination
-  const page = parseInt(searchParams.page || "1");
+  const page = parseInt(params.page || "1");
   const limit = 12;
   const from = (page - 1) * limit;
   const to = from + limit - 1;
@@ -102,7 +103,7 @@ export default async function ProductsPage({
                 products={products || []}
                 currentPage={page}
                 totalPages={totalPages}
-                searchParams={searchParams}
+                searchParams={params}
               />
             </Suspense>
           </div>

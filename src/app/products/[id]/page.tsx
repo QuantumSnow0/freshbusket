@@ -6,20 +6,21 @@ import ProductDetails from "@/components/ProductDetails";
 import SEOHead from "@/components/SEOHead";
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
   const supabase = createClient();
+  const { id } = await params;
 
   const { data: product } = await supabase
     .from("products")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (!product) {
@@ -45,11 +46,12 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const supabase = createClient();
+  const { id } = await params;
 
   const { data: product } = await supabase
     .from("products")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (!product) {
@@ -65,7 +67,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         description={seo.description}
         keywords={seo.keywords}
         image={seo.openGraph.images[0].url}
-        url={`/products/${product.id}`}
+        url={`/products/${id}`}
         type="product"
         product={product}
         structuredData={seo.structuredData}

@@ -21,8 +21,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     product.discount_value > 0;
   const discountedPrice = hasDiscount
     ? product.discount_type === "percentage"
-      ? product.price * (1 - product.discount_value / 100)
-      : product.price - product.discount_value
+      ? product.price * (1 - (product.discount_value || 0) / 100)
+      : product.price - (product.discount_value || 0)
     : product.price;
 
   const itemQuantity = getItemQuantity(product.id);

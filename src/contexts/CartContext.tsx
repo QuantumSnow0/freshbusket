@@ -9,6 +9,7 @@ interface CartContextType {
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
+  getItemQuantity: (productId: string) => number;
   clearCart: () => void;
 }
 
@@ -103,6 +104,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const getItemQuantity = (productId: string) => {
+    const item = cart.items.find((item) => item.product.id === productId);
+    return item ? item.quantity : 0;
+  };
+
   const clearCart = () => {
     setCart({
       items: [],
@@ -116,6 +122,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     addToCart,
     removeFromCart,
     updateQuantity,
+    getItemQuantity,
     clearCart,
   };
 
