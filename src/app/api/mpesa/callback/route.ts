@@ -18,6 +18,15 @@ interface CallbackBody {
   };
 }
 
+export async function GET() {
+  return NextResponse.json({
+    success: true,
+    message: "M-Pesa Callback endpoint is working",
+    method: "GET",
+    timestamp: new Date().toISOString(),
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Handle ngrok warning page bypass
