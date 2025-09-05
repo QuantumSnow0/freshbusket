@@ -65,6 +65,9 @@ export async function POST(request: NextRequest) {
     // Determine payment status based on result code
     let newStatus: "success" | "failed" = "failed";
     let metadata = { ...payment.metadata };
+    let mpesaReceiptNumber = null;
+    let phoneNumber = null;
+    let amount = payment.amount;
 
     if (stkCallback.ResultCode === 0) {
       // Payment successful
@@ -75,6 +78,17 @@ export async function POST(request: NextRequest) {
         const callbackData: Record<string, any> = {};
         stkCallback.CallbackMetadata.Item.forEach((item) => {
           callbackData[item.Name] = item.Value;
+
+          // Extract specific fields for easier querying
+          if (item.Name === "MpesaReceiptNumber") {
+            mpesaReceiptNumber = item.Value;
+          }
+          if (item.Name === "PhoneNumber") {
+            phoneNumber = item.Value;
+          }
+          if (item.Name === "Amount") {
+            amount = parseFloat(item.Value as string);
+          }
         });
         metadata.callback_data = callbackData;
       }
@@ -83,12 +97,21 @@ export async function POST(request: NextRequest) {
       metadata.failure_reason = stkCallback.ResultDesc;
     }
 
-    // Update payment status
+    // Update payment with comprehensive data
     const { error: updateError } = await supabase
       .from("payments")
       .update({
         status: newStatus,
-        metadata: metadata,
+        amount: amount,
+        metadata: {
+          ...metadata,
+          mpesa_receipt_number: mpesaReceiptNumber,
+          phone_number: phoneNumber,
+          merchant_request_id: stkCallback.MerchantRequestID,
+          result_code: stkCallback.ResultCode,
+          result_description: stkCallback.ResultDesc,
+          callback_timestamp: new Date().toISOString(),
+        },
         updated_at: new Date().toISOString(),
       })
       .eq("id", payment.id);
@@ -114,14 +137,29 @@ export async function POST(request: NextRequest) {
       if (orderUpdateError) {
         console.error("Failed to update order status:", orderUpdateError);
         // Don't fail the callback, payment was recorded successfully
+      } else {
+        console.log(`Order ${payment.order_id} marked as paid`);
       }
     }
 
-    console.log(`Payment ${payment.id} updated to status: ${newStatus}`);
+    console.log(`Payment ${payment.id} updated to status: ${newStatus}`, {
+      mpesaReceiptNumber,
+      phoneNumber,
+      amount,
+      orderId: payment.order_id,
+    });
 
     return NextResponse.json({
       success: true,
       message: `Payment ${newStatus}`,
+      data: {
+        paymentId: payment.id,
+        status: newStatus,
+        mpesaReceiptNumber,
+        phoneNumber,
+        amount,
+        orderId: payment.order_id,
+      },
     });
   } catch (error) {
     console.error("M-Pesa Callback error:", error);
